@@ -31,7 +31,7 @@ Every figure carries its source and date. Missing data prints "not available". T
 
 | Piece | What it does | Status |
 |---|---|---|
-| Project description | Tells Claude the job and the rules | Written, below |
+| Project instructions | Tell Claude the job and the rules | Written, below |
 | Reference files | Define the method, the risk rating, sector rules, the report layout and the evidence | Written, in `reference/` |
 | Data sources | Financial Modeling Prep for company profiles, Alpha Vantage for statements, prices and ETF holdings | Chosen and tested |
 | Skill with scripts | Downloads the data, calculates every number and builds the PDF | Written, in `skill/` |
@@ -53,7 +53,7 @@ Claude writes the short prose in each report. Every number comes from a script, 
 1. Create a free account at financialmodelingprep.com and a free API key at alphavantage.co. Store both keys in a password manager.
 2. In Claude, connect the FMP connector and the Alpha Vantage connector from the connector directory. Each asks for your key in its own sign-in screen.
 3. Create a new project and name it `Stock and ETF Evaluator`.
-4. Paste the text under "Project description" below into the project's instructions.
+4. On the project page, click "Add" next to Instructions and paste the text under "Project instructions" below. The separate Description field is only a short label; a suggested one is below.
 5. Add the five files from `reference/` as project context.
 6. Install the skill. Zip the `skill/stock-etf-evaluator` folder and upload it in Claude's skill settings.
 7. Open the project and type a ticker.
@@ -62,7 +62,7 @@ Your keys live only inside the two connectors. Never put a key in this repositor
 
 There is an optional faster route. If you add a line `ALPHAVANTAGE_API_KEY=your key` to your own project's instructions, the skill downloads the data with a script instead of through the connector. That needs Claude's code sandbox to be allowed to reach `www.alphavantage.co`, and it puts your key in your project's instructions, which only you can see.
 
-### Project description
+### Project instructions
 
 ```
 When I type a ticker symbol, produce a PDF evaluation of that US-listed stock or ETF.
@@ -84,6 +84,14 @@ sector rules, 04-report-template for the layout and wording, and
 Show the date and source of every data point. If data is missing, print "not
 available" and never substitute an estimate. Do not give a percent gain forecast
 or a fair-value price. This is non-personalized research, not investment advice.
+```
+
+### Project description (optional)
+
+```
+Type a ticker and get a PDF evaluation of a US stock or ETF: quality, value,
+momentum and trend, a risk rating from 1 to 5, and price levels. Research only,
+not investment advice.
 ```
 
 ## Limits
