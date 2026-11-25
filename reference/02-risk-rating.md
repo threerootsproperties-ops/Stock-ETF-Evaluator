@@ -1,6 +1,8 @@
 # Risk rating specification
 
-Version 0.1, written 2026-11-24. The risk rating is a class from 1 (lowest) to 5 (highest) that describes how rough the ride has been and what could make it rougher. It says nothing about expected return. A high rating marks variance, not opportunity.
+Version 0.2, written 2026-11-24. The risk rating is a class from 1 (lowest) to 5 (highest) that describes how rough the ride has been and what could make it rougher. It says nothing about expected return. A high rating marks variance, not opportunity.
+
+Version 0.2 calculates volatility from weekly prices, because the free data supplies only 100 days of daily history, and drops the crowding group, because short interest is not available free.
 
 ## Design
 
@@ -10,7 +12,7 @@ No regulator or vendor publishes this exact scale. The base bands borrow the EU 
 
 ## Step 1: base class from volatility
 
-Annualized volatility is the standard deviation of daily log returns multiplied by the square root of 252, using up to 5 years of history. At least 2 years are required; with less, the rating prints "not available, insufficient history".
+Annualized volatility is the standard deviation of weekly log returns, calculated from adjusted weekly closes, multiplied by the square root of 52. The window is the last 5 years, or the full history if shorter.
 
 | Annualized volatility | Base class |
 |---|---|
@@ -20,9 +22,11 @@ Annualized volatility is the standard deviation of daily log returns multiplied 
 | 30% to below 50% | 4 |
 | 50% and above | 5 |
 
-The EU regulation uses a "VaR-equivalent volatility" that also accounts for skew and fat tails. This specification uses plain volatility because it is easier to check by hand. The report prints the maximum drawdown over the same window beside the class so tail behavior is still visible.
+At least 2 years of weekly history are required; with less, the rating prints "not available, insufficient history". The EU regulation asks for 4 years when weekly data is used, so a rating built on 2 to 4 years carries the note "short history; the class may understate risk".
 
-A stock whose history contains no market decline of 20% or more gets the note "history includes no bear market; the class may understate risk".
+The EU regulation uses a "VaR-equivalent volatility" that also accounts for skew and fat tails. This specification uses plain volatility because it is easier to check by hand. The report prints the maximum drawdown over the same window beside the class so tail behavior is still visible. Drawdown is measured on weekly closes, so it understates declines that reversed within a week.
+
+A stock whose window contains no decline of 20% or more in SPY gets the note "history includes no bear market; the class may understate risk".
 
 ## Step 2: notches
 
@@ -30,14 +34,15 @@ Each group below can add at most one notch, however many of its conditions are m
 
 | Group | Adds one notch when any condition is true |
 |---|---|
-| Balance sheet | Negative net income over the trailing 12 months; operating income less than 2 times interest expense; total debt more than 4 times EBITDA; negative shareholder equity |
+| Balance sheet | Negative net income over the trailing 4 quarters; operating income less than 2 times interest expense; total debt more than 4 times EBITDA; negative shareholder equity |
 | Liquidity | Median 20-day dollar volume below $5 million; share price below $5 |
-| Crowding | Days to cover above 10; short interest above 20% of float |
-| Market backdrop | SPY closing below its 200-day average |
+| Market backdrop | SPY closing below its 40-week average |
+
+A test whose inputs are missing is skipped and listed as "not tested", never counted as passed or failed. Interest expense reported as zero or "None" at a company with debt counts as missing.
 
 Banks, insurers and REITs skip the debt and interest tests, which do not suit their balance sheets, and use the tests in `03-sector-metric-map.md`.
 
-For ETFs the balance sheet and crowding groups are replaced by a structure group, which adds one notch when the top 10 holdings exceed 50% of assets, when assets are below $50 million, or when the fund is an exchange-traded note.
+For ETFs the balance sheet group is replaced by a structure group, which adds one notch when the top 10 holdings exceed 50% of assets or when net assets are below $50 million.
 
 ## Step 3: overrides
 
@@ -47,16 +52,15 @@ Geared, inverse and single-stock funds are set to class 5 regardless of the step
 
 | Flag | Condition |
 |---|---|
-| Earnings event | Next earnings report within 10 trading days |
-| Estimate uncertainty | Forecast dispersion in the top fifth of the peer group |
-| Stale data | Any input older than its expected refresh cycle |
+| Recent earnings | The latest earnings report is more than 75 days old, so the next one is likely near. The exact date is not in the free data. |
+| Stale data | Latest price is more than 3 trading days old, or latest statements are more than 6 months old |
 
 ## What the report prints
 
-The report shows the class, the base class, each notch with the figure that triggered it, the annualized volatility, the maximum drawdown and the length of history used. A reader should be able to rebuild the class from the printed inputs.
+The report shows the class, the base class, each notch with the figure that triggered it, any tests that were skipped, the annualized volatility, the maximum drawdown and the length of history used. A reader should be able to rebuild the class from the printed inputs.
 
-Example: "Risk 4 of 5. Base class 3 (volatility 27% over 5 years, maximum drawdown 41%). Plus 1 for balance sheet (interest cover 1.4x). Flag: earnings in 6 trading days."
+Example: "Risk 5 of 5. Base class 5 (weekly volatility 96% over 5 years, maximum drawdown 71%). Balance sheet notch triggered (trailing net income negative) but the class is already at the cap."
 
 ## Known limits
 
-Past volatility understates risk for young companies and for names that have not yet lived through a downturn. The notch thresholds are round numbers chosen for clarity and should be reviewed once there are 50 or more reports to compare against what happened next. The rating does not measure valuation risk, fraud, or single-event risk such as a drug trial result.
+Past volatility understates risk for young companies and for names that have not yet lived through a downturn. Weekly data smooths over violent single days. The notch thresholds are round numbers chosen for clarity and should be reviewed once there are 50 or more reports to compare against what happened next. The rating does not measure valuation risk, crowding, fraud, or single-event risk such as a drug trial result.

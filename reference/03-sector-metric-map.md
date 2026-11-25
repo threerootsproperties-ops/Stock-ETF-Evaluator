@@ -1,8 +1,10 @@
 # Sector metric map
 
-Version 0.1, written 2026-11-24. Generic ratios mislead in several sectors. This file tells the evaluator which metrics to use, which to hide, and which sector fund to compare against.
+Version 0.2, written 2026-11-24. Generic ratios mislead in several sectors. This file tells the evaluator which metrics to use, which to hide, and which sector fund to compare against.
 
-Classification comes from the data vendor's sector and industry fields. Research comparing classification systems found that GICS groups explain valuation multiples and return comovement better than SIC or NAICS codes ([Bhojraj, Lee and Oler](https://ideas.repec.org/a/bla/joares/v41y2003i5p745-774.html)). Vendor sectors follow the same eleven-sector layout closely enough for peer grouping; where a vendor's label differs, map it to the nearest row below.
+Version 0.2 runs on free data, which carries standard financial statements only. Many sector-specific figures are company-reported and are not in those statements; the "Usually missing" column lists them, and the report prints "not available" for each.
+
+Classification comes from the sector and industry fields in the FMP company profile. Research comparing classification systems found that GICS groups explain valuation multiples and return comovement better than SIC or NAICS codes ([Bhojraj, Lee and Oler](https://ideas.repec.org/a/bla/joares/v41y2003i5p745-774.html)). Vendor sectors follow the same eleven-sector layout closely enough for peer grouping; where a vendor's label differs, map it to the nearest row below.
 
 ## Benchmark fund by sector
 
@@ -29,9 +31,9 @@ The market benchmark is SPY. Information Technology was close to 40% of the S&P 
 | Group | Use | Hide | Usually missing |
 |---|---|---|---|
 | Default (most industrial, consumer, technology and health care companies) | The pillars as defined in `01-methodology.md` | Nothing | Nothing |
-| Banks | Price / tangible book value, return on equity, net interest margin, efficiency ratio, nonperforming loans / total loans | EBITDA yield, free cash flow yield, debt load, interest cover, current ratio | Common equity tier 1 ratio, deposit mix |
-| Insurers | Price / book value, return on equity, combined ratio | EBITDA yield, free cash flow yield, debt load | Reserve development, catastrophe losses |
-| Equity REITs | Price / funds from operations, dividend yield, net debt / EBITDA | Earnings yield and P/E (depreciation distorts earnings) | Adjusted funds from operations, net asset value, occupancy |
+| Banks | Price / tangible book value, return on equity, net interest income growth | EBITDA yield, free cash flow yield, debt load, interest cover, cash conversion | Net interest margin, efficiency ratio, nonperforming loans, common equity tier 1 ratio, deposit mix |
+| Insurers | Price / book value, return on equity | EBITDA yield, free cash flow yield, debt load, cash conversion | Combined ratio, reserve development, catastrophe losses |
+| Equity REITs | Price / approximate funds from operations, net debt / EBITDA | Earnings yield (depreciation distorts earnings) | Reported funds from operations, adjusted funds from operations, net asset value, occupancy |
 | Software | Sales yield, revenue growth, free cash flow margin, Rule of 40 (revenue growth % + free cash flow margin %) | Nothing; earnings yield is shown but may be negative | Annual recurring revenue, net revenue retention |
 | Loss-making growth companies in any sector | Sales yield, revenue growth, gross margin, cash runway (cash and investments / trailing 12-month operating cash burn) | Earnings yield as a ranking input | Pipeline and milestone data |
 | Oil and gas producers | EBITDA yield, free cash flow yield, net debt / EBITDA | Nothing | Reserves, reserve life, breakeven price |
@@ -58,11 +60,13 @@ The balance sheet notch in `02-risk-rating.md` uses these tests in place of the 
 
 | Group | Adds the balance sheet notch when |
 |---|---|
-| Banks | Trailing 12-month net income is negative, or nonperforming loans exceed 3% of total loans |
-| Insurers | Trailing 12-month net income is negative, or the combined ratio exceeds 105% |
-| Equity REITs | Net debt exceeds 8 times EBITDA, or funds from operations are negative |
+| Banks | Net income over the trailing 4 quarters is negative |
+| Insurers | Net income over the trailing 4 quarters is negative |
+| Equity REITs | Net debt exceeds 8 times EBITDA, or approximate funds from operations are negative |
 
-These thresholds are design choices. No published benchmark was confirmed for them.
+Approximate funds from operations is net income plus depreciation and amortization. The standard definition also removes gains on property sales, which the free statements do not break out, so the figure is labelled approximate wherever it appears.
+
+These thresholds are design choices. No published benchmark was confirmed for them. Loan quality and underwriting figures would make better tests for banks and insurers, but they are not in the free data.
 
 ## Known gaps
 

@@ -1,10 +1,10 @@
 # Report template
 
-Version 0.1, written 2026-11-24. Every report follows this layout so that two reports can be compared line by line. The PDF is built from script output; the Project writes the short prose passages and nothing else.
+Version 0.2, written 2026-11-24. Every report follows this layout so that two reports can be compared line by line. The PDF is built from script output; the Project writes the short prose passages and nothing else.
 
 ## Format
 
-The report is a PDF on US Letter pages, 3 to 4 pages for a stock and 2 to 3 for an ETF. The file name is `TICKER-evaluation-YYYY-MM-DD.pdf`. Tables carry the numbers. Prose is limited to the summary and one or two sentences under each section, written in plain language with no forecast of price.
+The report is a PDF on US Letter pages, about 3 pages for a stock and 2 for an ETF. The file name is `TICKER-evaluation-YYYY-MM-DD.pdf`. Tables carry the numbers. Prose is limited to the summary and one or two sentences under each section, written in plain language with no forecast of price.
 
 Every table has an "as of" date and a source. A missing figure prints "not available".
 
@@ -12,26 +12,36 @@ Every table has an "as of" date and a source. A missing figure prints "not avail
 
 ### 1. Header
 
-Ticker, company name, sector and industry, exchange, last close and its date, market capitalization, report date, and the methodology and script versions.
+Ticker, company name, sector and industry, last close and its date, market capitalization, report date, and the methodology and script versions.
 
 ### 2. Summary
 
-One paragraph of 4 to 6 sentences that states, in this order: what the four pillars show and where they disagree, the risk class and its main driver, where price sits against the levels, and the most important flag. The summary describes; it does not recommend buying or selling.
+One paragraph of 4 to 6 sentences that states, in this order: what the three pillars show and where they disagree, the risk class and its main driver, where price sits against the levels, and the most important flag. The summary describes; it does not recommend buying or selling.
 
 ### 3. Pillars
 
-| Pillar | Peer percentile | Reading | Components used |
-|---|---|---|---|
-| Quality | 0 to 100 | Strong, middle or weak | n of 5 |
-| Value | 0 to 100 | Strong, middle or weak | n of 5 |
-| Momentum and trend | 0 to 100 or raw values | Strong, middle or weak | n of 4 |
-| Estimate revisions | 0 to 100 | Strong, middle or weak | n of 3 |
+One table per pillar. Quality and value use these columns:
 
-Below the table, one small table per pillar lists each component with its value, the peer median and the percentile. The value pillar adds each multiple against its own 5-year median. The value-trap flag prints here when it applies.
+| Component | Current | Own 5-year median | Against own history |
+|---|---|---|---|
+| (one row per component) | | | Better, worse, or in line |
+
+"In line" means within 10% of the median. The value-trap flag prints under the value table when it applies.
+
+Momentum and trend uses these columns:
+
+| Component | Stock | SPY | Sector fund |
+|---|---|---|---|
+| 13-week return | | | |
+| 26-week return | | | |
+| 52-week return | | | |
+| 12-1 momentum | | | |
+
+Below it: distance from the 52-week high, position against the 50-day and 40-week averages, and the Extended state.
 
 ### 4. Risk rating
 
-The class out of 5, the base class, each notch with the figure that triggered it, annualized volatility, maximum drawdown, the length of history, and any flags. The format is given in `02-risk-rating.md`.
+The class out of 5, the base class, each notch with the figure that triggered it, any tests skipped for missing data, annualized volatility, maximum drawdown, the length of history, and any flags. The format is given in `02-risk-rating.md`.
 
 ### 5. Levels
 
@@ -44,60 +54,58 @@ The class out of 5, the base class, each notch with the figure that triggered it
 | Tightened trail (if active) | | |
 | Measured-move reference | | |
 
-A price chart of the last 12 months follows, with the 50-day and 200-day averages and the levels drawn as horizontal lines. Under it: the trend state, whether the stock is Extended, reward to risk with its break-even win rate, and any active topping flags.
+Two charts follow. The first shows the last 100 days of daily prices with the 50-day average and the levels drawn as horizontal lines. The second shows 3 years of weekly prices with the 40-week average. Under them: reward to risk with its break-even win rate, and any active topping flags.
 
-When the stock is Extended or in a downtrend, the buy range rows are replaced by the line "No buy range: [reason]" and the nearest structure references are listed.
+When the stock is Extended or below its 40-week average, the buy range rows are replaced by the line "No buy range: [reason]" and the nearest structure references are listed.
 
-### 6. Liquidity and positioning
+### 6. Liquidity
 
-Median dollar volume, relative volume, days to cover, short percent of float, insider activity over 6 months, and the change in institutional holders with the filing date.
+Median dollar volume, relative volume, and the Amihud figure.
 
 ### 7. Context
 
-Sector fund against SPY over 1, 3, 6 and 12 months; the stock against its sector fund; market backdrop; next earnings date and the last four surprises; earnings quality checks; the analyst target range with the standing note below.
-
-Standing note on targets: "Analyst targets have historically run about 15 points above what stocks went on to return, and fewer than 4 in 10 were met at 12 months. They are shown for context."
+Sector fund against SPY over 13, 26 and 52 weeks; market backdrop; the last four earnings results against consensus; earnings quality; revenue and income growth.
 
 ### 8. Data and limits
 
-A table of every data source used with its as-of date, a list of anything that was not available, and the closing statement.
+A table of every data source used with its as-of date, a list of anything that was not available, the standing list of items not included in this version, and the closing statement.
 
-Closing statement, printed on every report: "This report is generated by fixed rules from public and licensed data. It is non-personalized research and is not investment advice. It does not know your holdings, goals or tax situation. Levels are planning references based on past price structure; prices can gap through them. The measures shown have not been validated as predictors for this stock. Data may be delayed or wrong; check anything you plan to act on."
+Standing list, printed on every stock report: "Not included in this version: comparison with peer companies, analyst estimate revisions, short interest, institutional and insider activity, the next earnings date, and analyst price targets."
+
+Closing statement, printed on every report: "This report is generated by fixed rules from third-party data. It is non-personalized research and is not investment advice. It does not know your holdings, goals or tax situation. Levels are planning references based on past price structure; prices can gap through them. The measures shown have not been validated as predictors for this stock. Data may be delayed or wrong; check anything you plan to act on."
 
 ## ETF report
 
 ### 1. Header
 
-Ticker, fund name, issuer, category, last close and its date, assets under management, inception date, report date and versions.
+Ticker, fund name, last close and its date, net assets, inception date, report date and versions.
 
 ### 2. Summary
 
-One paragraph that states: what the fund holds and how concentrated it is, what it costs to hold and to trade, any structure issue, the risk class, and where price sits against the levels.
+One paragraph that states: what the fund holds and how concentrated it is, what it costs to hold, the risk class, and where price sits against the levels.
 
-### 3. Structure and cost
+### 3. Cost, size and age
 
-Legal structure and what it means for taxes, expense ratio, tracking difference when available, distribution yield, and whether the fund lends securities when the data shows it.
+Net expense ratio, portfolio turnover, dividend yield, net assets with the $50 million warning line, and inception date.
 
-### 4. Tradability and survival
+### 4. Exposure
 
-Median dollar volume, 30-day median spread, premium or discount to net asset value, assets under management with the $50 million warning line, and fund age.
+Top 10 holdings with weights, top-10 total, effective number of holdings, and sector weights.
 
-### 5. Exposure
+### 5. Momentum and trend, risk rating, levels, liquidity
 
-Top 10 holdings with weights, top-10 total, effective number of holdings, sector weights against SPY, and holdings-weighted earnings yield and dividend yield.
+The same content as sections 3 (momentum table only), 4, 5 and 6 of the stock report.
 
-### 6. Risk rating, levels, and trend
+### 6. Data and limits
 
-The same content as sections 4 and 5 of the stock report, calculated on a distribution-adjusted price series.
+The data table, the standing list below, and the closing statement.
 
-### 7. Context, data and limits
+Standing list, printed on every ETF report: "Not available in the free data, check the issuer's website: legal structure and tax treatment, bid-ask spread, premium or discount to net asset value, and tracking difference against the index."
 
-Sector or category comparison, market backdrop, the data table, and the closing statement.
+## Reduced report for geared, inverse and single-stock funds
 
-## Reduced report for geared, inverse and single-stock funds and for notes
-
-Header, summary, structure and cost, tradability, and the risk rating at class 5. The summary opens with this line: "This fund resets daily. Over periods longer than one day its return can differ sharply from the multiple of the index it names." For an exchange-traded note the opening line is: "This is an unsecured note. Its value depends on the issuer's ability to pay." Trend scores and levels are omitted.
+Header, summary, cost, size and age, liquidity, and the risk rating at class 5. The summary opens with this line: "This fund resets daily. Over periods longer than one day its return can differ sharply from the multiple of the index it names." Trend readings and levels are omitted.
 
 ## Wording rules
 
-State what the data shows and stop. Do not write "buy", "sell", "should", "undervalued" or "overvalued" as conclusions; "buy range" and "trailing exit" are allowed as the names of levels. Do not predict a price or a percent gain. When pillars disagree, say so plainly; do not average them into a verdict. Use the same names for pillars, levels and flags as `01-methodology.md` every time.
+State what the data shows and stop. Do not write "buy", "sell", "should", "undervalued" or "overvalued" as conclusions; "buy range" and "trailing exit" are allowed as the names of levels. Do not predict a price or a percent gain. When pillars disagree, say so plainly; do not average them into a verdict. "Better than its own history" must never be shortened to "good" or "cheap". Use the same names for pillars, levels and flags as `01-methodology.md` every time.

@@ -1,27 +1,44 @@
 # Methodology
 
-Version 0.1, written 2026-11-24. This file defines what the evaluator measures, how each measure is calculated, and how results are shown. The Project reads it as reference. The scripts in the skill are the final word on any formula; where this file and a script disagree, fix this file.
+Version 0.2, written 2026-11-24. This file defines what the evaluator measures, how each measure is calculated, and how results are shown. The Project reads it as reference. The scripts in the skill are the final word on any formula; where this file and a script disagree, fix this file.
+
+Version 0.2 is built around free data. It runs on the free tiers of two data connectors, which sets the limits described below. Version 0.1 assumed a paid data plan and peer rankings; those parts are listed under "Left out of this version".
 
 This is non-personalized research for the person running it. It is not investment advice, and nothing here knows your holdings, goals or account size.
 
 ## How a run works
 
 1. You type a ticker.
-2. The Project pulls raw data through the connected data source and records the source and as-of date of every figure.
-3. The raw data is saved to a file, and the scripts calculate every ratio, percentile, level and rating from that file.
+2. The Project pulls raw data through the two connectors, one request at a time, and records the source and as-of date of every figure.
+3. The raw data is saved to a file, and the scripts calculate every ratio, level and rating from that file.
 4. The Project writes the PDF from the script output, following `04-report-template.md`.
 
 No number in the report is calculated in conversation. If the scripts did not produce it, it does not appear.
 
+## Data sources and the daily budget
+
+| Source | Free tier limit | What the evaluator takes from it |
+|---|---|---|
+| Financial Modeling Prep (FMP) | 250 requests a day; full data only for a short list of very large companies, but the company profile works for any ticker | Company profile: name, sector, industry, market capitalization, whether the ticker is an ETF |
+| Alpha Vantage | 25 requests a day, no faster than one per second | Income statement, balance sheet, cash flow, earnings history, the last 100 days of daily prices, full weekly price history, and ETF profiles with holdings |
+
+A stock report uses 1 FMP request and 8 Alpha Vantage requests: three statements, earnings, daily prices, and weekly prices for the stock, SPY and the sector fund. An ETF report uses 1 FMP request and 4 Alpha Vantage requests. That allows about three stock reports or six ETF reports a day on free keys.
+
+Tested on 2026-11-24: the FMP profile, and Alpha Vantage's income statement, daily prices, weekly prices and ETF profile. The balance sheet, cash flow and earnings requests come from the same group as the income statement and are expected to work, but had not been tested when this file was written.
+
+Two consequences of the free tiers shape everything below. Daily prices cover only the last 100 trading days, so anything that needs a longer window uses weekly prices. And there is no budget to pull data for a group of peers, so figures are compared with the company's own history and with fixed reference points, not with a peer ranking.
+
 ## Stock or ETF
 
-The first step is deciding which track applies. Common stocks, ADRs and REITs go through the stock track. Exchange-traded funds go through the ETF track. Exchange-traded notes, geared (2x, 3x) funds, inverse funds and single-stock funds are identified and flagged, then given a reduced report (see the ETF track).
+The FMP profile says whether a ticker is an ETF. Common stocks, ADRs and REITs go through the stock track. Exchange-traded funds go through the ETF track. Geared (2x, 3x), inverse and single-stock funds are identified and given a reduced report (see the ETF track).
 
-## The four pillars
+## The three pillars
 
-A stock report shows four pillars side by side. Each pillar is a percentile from 0 to 100 against a peer group, with its components listed underneath. There is no blended score, on purpose: a single composite hides disagreement between pillars, and none of the professional methods reviewed uses tuned weights.
+A stock report shows three pillars side by side: quality, value, and momentum and trend. Each lists its components with the current figure, the company's own 5-year median where that applies, and whether the current figure is better or worse than that median.
 
-Inside a pillar, every component gets equal weight. A component with missing data is dropped and the pillar says how many components it used. A pillar with fewer than two components prints "not available".
+There is no blended score and no single grade per pillar. A composite hides disagreement between pillars, none of the professional methods reviewed uses tuned weights, and without peer data a grade would rest on thresholds nobody has tested.
+
+A component with missing data prints "not available". Alpha Vantage reports some missing fields as the text "None" or as zero; the scripts treat both as missing for fields that cannot sensibly be zero, such as interest expense at a company with debt.
 
 ### Quality
 
@@ -31,75 +48,48 @@ Inside a pillar, every component gets equal weight. A component with missing dat
 | Operating margin | Operating income / revenue | Higher |
 | Return on equity | Net income / average shareholder equity | Higher |
 | Debt load | Total debt / shareholder equity | Lower |
-| Earnings stability | Standard deviation of year-over-year EPS growth, last 5 fiscal years | Lower |
+| Earnings stability | Standard deviation of year-over-year net income growth, last 5 fiscal years | Lower |
+| Cash conversion | Operating cash flow / net income, trailing 4 quarters | Higher, and above 1 |
 
-Return on equity, debt and earnings stability are the three inputs MSCI uses for its quality indexes. Gross profitability is the measure with the strongest return evidence. Negative shareholder equity gets the worst rank on return on equity and debt load. Banks, insurers and REITs use the substitutions in `03-sector-metric-map.md`.
+Return on equity, debt and earnings stability are the three inputs MSCI uses for its quality indexes. Gross profitability is the measure with the strongest return evidence. Negative shareholder equity is flagged and return on equity and debt load print "not meaningful". Banks, insurers and REITs use the substitutions in `03-sector-metric-map.md`.
 
 ### Value
 
-Value is ranked on yields, not multiples, because a yield still sorts correctly when earnings are negative.
+Value is shown as yields, not multiples, because a yield still reads correctly when earnings are negative.
 
 | Component | Formula | Notes |
 |---|---|---|
-| Earnings yield | Trailing 12-month EPS / price | Negative values rank last, not excluded |
+| Earnings yield | Trailing 4-quarter net income / market capitalization | Negative values are shown, not hidden |
 | Free cash flow yield | (Operating cash flow - capital expenditure) / enterprise value | Skipped for banks and insurers |
 | EBITDA yield | EBITDA / enterprise value | Skipped for banks, insurers and REITs |
-| Sales yield | Revenue / enterprise value | Used when earnings and EBITDA are both negative |
-| Forward earnings yield | Next fiscal year consensus EPS / price | Needs an estimates source |
+| Sales yield | Revenue / enterprise value | The main measure when earnings and EBITDA are negative |
 
-The report also shows each multiple against the stock's own 5-year median, so "cheap against peers" and "cheap against its own history" can be told apart.
+Enterprise value is market capitalization plus total debt minus cash and short-term investments.
 
-Value is never shown alone. If the value pillar is in the top third while quality is in the bottom quarter and price is below its 200-day average, the report prints a value-trap flag.
+Each yield is shown beside the company's own median for the last 5 fiscal years, using the year-end price from the weekly series, so a reader can see whether the stock is cheaper or dearer than its own recent norm. This says nothing about whether it is cheap against other companies.
+
+Value is never shown alone. If earnings yield and free cash flow yield are both above their 5-year medians while return on equity is negative and price is below its 40-week average, the report prints a value-trap flag.
 
 ### Momentum and trend
 
-| Component | Formula |
-|---|---|
-| 12-1 momentum | Total return from 12 months ago to 1 month ago |
-| 52-week high proximity | Current price / highest close of the last 252 sessions |
-| Relative strength | Return minus SPY return over 3, 6 and 12 months; the same against the sector ETF |
-| Trend position | Price against the 50-day and 200-day simple averages, and whether the 50-day is above the 200-day |
-
-Until a peer price panel is available, this pillar is shown as raw values against SPY and the sector ETF instead of a peer percentile.
-
-The pillar also carries a state label. A stock is "Extended" when its price sits 2.5 or more standard deviations above its 50-day average. Extended suppresses the buy range (see Levels). In the author's own testing on an earlier project this do-not-chase state was the one entry-side rule that held up, and it weakened sharply in bear markets.
-
-### Estimate revisions
-
-| Component | Formula |
-|---|---|
-| Revision magnitude | Percent change in consensus EPS for the current and next fiscal year over 30 and 90 days |
-| Revision breadth | (Analysts raising - analysts lowering) / analysts covering, last 30 days |
-| Post-report change | Percent change in next-quarter consensus in the 30 days after the last earnings report |
-
-This pillar needs a paid estimates source. Without one it prints "not available". Forecast dispersion (standard deviation of estimates / absolute mean) is shown as an uncertainty flag and does not enter the pillar.
-
-## Peer groups and percentiles
-
-Peers are companies in the same industry from the data vendor's classification, widened to the sector until there are at least 10. Each component is ranked as a percentile within the peer group, flipped where lower is better, and the pillar is the average of its component percentiles. The report also prints the market-wide percentile when the vendor supplies enough data, so a reader can see when a whole sector is expensive.
-
-Percentiles are read in thirds: 67 and above is "strong", 34 to 66 is "middle", 33 and below is "weak". These cut points are a display convention.
-
-## Positioning line
-
-Positioning is one line, not a pillar, because the data is late and the effects are small.
-
-| Item | Formula | How it is read |
+| Component | Formula | Data |
 |---|---|---|
-| Days to cover | Short interest / 20-day average share volume | Above 10 flags squeeze risk and a crowded short |
-| Short percent of float | Short interest / float | Shown beside days to cover |
-| Insider buying | Open-market purchases minus sales by officers and directors, last 6 months, excluding trades marked as 10b5-1 plan trades | Net buying by 2 or more insiders is noted |
-| Institutional change | Change in number of 13F holders and shares held, latest quarter against the prior one | Shown with the filing date; up to 135 days old |
+| 12-1 momentum | Return from 52 weeks ago to 4 weeks ago | Weekly |
+| 52-week high proximity | Last close / highest high of the last 52 weeks | Weekly and daily |
+| Relative strength | Return minus SPY return over 13, 26 and 52 weeks; the same against the sector fund | Weekly |
+| Trend position | Price against the 50-day average and the 40-week average, and whether the 10-week average is above the 40-week | Daily and weekly |
 
-The thresholds in this table are design choices, not published standards.
+The 40-week average stands in for the 200-day average, which cannot be calculated from 100 days of daily data. They cover the same span.
+
+The pillar also carries a state label. A stock is "Extended" when its last close sits 2.5 or more standard deviations above its 50-day average, using the standard deviation of the last 50 daily closes. Extended suppresses the buy range (see Levels). In the author's own testing on an earlier project this do-not-chase state was the one entry-side rule that held up, and it weakened sharply in bear markets.
 
 ## Liquidity
 
 | Item | Formula |
 |---|---|
-| Dollar volume | Median of (close x volume) over 20 sessions |
-| Amihud illiquidity | Average of (absolute daily return / dollar volume) over 60 sessions |
-| Relative volume | Today's volume / 50-day average volume |
+| Dollar volume | Median of (close x volume) over the last 20 sessions |
+| Amihud illiquidity | Average of (absolute daily return / dollar volume) over the last 60 sessions |
+| Relative volume | Latest session volume / 50-day average volume |
 
 Liquidity feeds the risk rating. It makes no claim about future returns.
 
@@ -109,15 +99,17 @@ All levels come from price structure. The evaluator does not estimate fair value
 
 | Level | Rule |
 |---|---|
-| Buy range | From the 50-day pivot high up to the pivot plus 2 x ATR(14). Shown only when the stock is not Extended and the trend position is positive. |
+| Buy range | From the 50-day pivot high up to the pivot plus 2 x ATR(14). Shown only when the stock is not Extended and price is above the 40-week average. |
 | Initial stop | Entry minus 2 x ATR(14), or 8% below entry, whichever is closer to entry |
 | Trailing exit | The higher of the 50-day average and the most recent higher swing low, minus 1 x ATR(14) |
-| Tightened trail | The same reference minus 0.5 x ATR(14) once any topping flag has fired for 5 sessions |
+| Tightened trail | The same reference minus 0.5 x ATR(14) once any topping flag has been active for 5 sessions |
 | Reward to risk | (Measured-move reference - entry) / (entry - stop), with the break-even win rate 1 / (1 + R) |
 
-Topping flags are: a close below the 50-day average on above-average volume, 5 or more distribution days in 25 sessions, a failed breakout (close back below the pivot by 7% or more), and a lower high followed by a lower low. The exact definitions are fixed by the scripts.
+The pivot high is the highest daily high of the last 50 sessions. ATR(14) is Wilder's average true range over 14 sessions. All of these fit inside 100 days of daily data.
 
-For a stock in a downtrend, the report replaces the buy range with the nearest structure references: the last swing low held, and the 50-day and 200-day averages.
+Topping flags are: a close below the 50-day average on above-average volume, 5 or more distribution days in 25 sessions, a failed breakout (a close back below the pivot by 7% or more), and a lower high followed by a lower low. The exact definitions are fixed by the scripts.
+
+For a stock below its 40-week average, the report replaces the buy range with the nearest structure references: the last swing low held, the 50-day average and the 40-week average.
 
 ## Context block
 
@@ -125,27 +117,41 @@ Context items are shown with one line on their track record and never move a pil
 
 | Item | What is shown |
 |---|---|
-| Sector | Sector ETF return against SPY over 1, 3, 6 and 12 months |
-| Market backdrop | SPY against its 200-day average |
-| Earnings | Next report date, the last four surprises, and the average absolute move on past earnings days |
-| Earnings quality | GAAP against adjusted EPS, and operating cash flow against net income over 4 quarters |
-| Analyst targets | Low, median and high target, with the note that targets have historically overshot |
-| Distress checks | Piotroski and Altman scores where the sector allows them |
+| Sector | Sector fund return against SPY over 13, 26 and 52 weeks |
+| Market backdrop | SPY against its 40-week average |
+| Earnings | The last four quarterly results against the consensus estimate, from the earnings history |
+| Earnings quality | Cash conversion over 4 quarters, and the trend in share count |
+| Growth | Revenue and net income growth, latest year and 3-year rate |
 
 ## ETF track
 
-An ETF report replaces the quality, value and revisions pillars with four ETF sections. Momentum and trend, liquidity, levels and the risk rating carry over, calculated on a distribution-adjusted price series.
+An ETF report replaces quality and value with ETF sections. Momentum and trend, liquidity, levels and the risk rating carry over unchanged.
 
-| Section | What is checked |
+| Section | What is checked | Source |
+|---|---|---|
+| Cost | Net expense ratio and portfolio turnover | Alpha Vantage ETF profile |
+| Size and age | Net assets, with a warning below $50 million, and inception date | Alpha Vantage ETF profile |
+| Exposure | Top 10 holdings with weights, top-10 total, effective number of holdings (1 / sum of squared weights), and sector weights | Alpha Vantage ETF profile |
+| Tradability | Median dollar volume and relative volume | Daily prices |
+| Structure | Whether the fund is geared | Alpha Vantage ETF profile |
+
+Three things an ETF analyst would normally check are not in the free data and print "not available, check the issuer's website": the fund's legal structure (which decides tax treatment), the bid-ask spread, and the premium or discount to net asset value.
+
+Geared, inverse and single-stock funds reset daily. A fund is treated as one of these when the ETF profile marks it as geared, or when its name contains terms such as "2X", "3X", "Ultra", "Inverse", "Short" or "Bear". Their report shows cost, size and tradability with a holding-period warning, sets the risk rating to the top class, and omits trend readings and levels.
+
+## Left out of this version
+
+These were in the original design and are not available on free data. Each is listed in the report's data section as "not included in this version".
+
+| Item | Why it is out |
 |---|---|
-| Structure | Legal form: open-end fund, unit investment trust, grantor trust, commodity pool, or exchange-traded note. Tax form and issuer credit risk follow from it. |
-| Cost | Expense ratio, and realized tracking difference against the index when index returns are available |
-| Tradability | Median dollar volume, 30-day median bid-ask spread, premium or discount to net asset value |
-| Survival | Assets under management, with a warning below $50 million, and fund age |
-| Exposure | Top-10 weight, effective number of holdings (1 / sum of squared weights), sector weights, and holdings-weighted earnings yield and dividend yield |
-
-Geared, inverse and single-stock funds reset daily. Their report shows structure, cost and tradability with a holding-period warning, pins the risk rating at the top class, and omits trend scores and levels. Exchange-traded notes carry the issuer's credit risk, and the report says so in the summary.
+| Peer percentiles | Pulling statements for ten peers would use several days of free requests |
+| Estimate revisions | History of analyst estimates is a paid feature |
+| Short interest and days to cover | Not offered by either free source |
+| Institutional holdings and insider activity | Alpha Vantage lists requests for both, but they were not tested and would add to the daily budget |
+| Next earnings date | The free earnings history shows past reports only |
+| Analyst price targets | Free only for the largest companies |
 
 ## Rules that apply everywhere
 
-Every figure carries its source and as-of date. Missing data prints "not available"; the evaluator never fills a gap with an estimate or a generic ratio. A figure older than its expected refresh cycle is marked stale. Each report prints the methodology and script versions it was built with, so two reports can be compared.
+Every figure carries its source and as-of date. Missing data prints "not available"; the evaluator never fills a gap with an estimate or a generic ratio. Each report prints the methodology and script versions it was built with, so two reports can be compared.

@@ -1,0 +1,20 @@
+# Secrets: never commit keys
+.env
+.env.*
+*.key
+*secret*
+*apikey*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Generated reports and raw data pulls
+*-evaluation-*.pdf
+output/
+data/raw/
+
+# OS clutter
+.DS_Store
+Thumbs.db
