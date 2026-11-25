@@ -60,6 +60,24 @@ def cell(row, key):
     return pct(v) if row.get("unit") == "pct" else ratio(v)
 
 
+def effective_text(e):
+    """Effective holdings, marked as an upper bound when the holdings list is partial."""
+    if e.get("effective_holdings") is None:
+        return NA
+    if e.get("effective_is_upper_bound"):
+        return f"no more than {ratio(e['effective_holdings'], 0)}; the list is partial, so the true figure is lower"
+    return ratio(e["effective_holdings"], 1)
+
+
+def holding_label(h):
+    sym = (h.get("symbol") or "").strip()
+    name = (h.get("name") or "").strip()
+    name = "" if name.lower() == "n/a" else name.title()
+    if sym.lower() in ("", "n/a"):
+        return name or "Unnamed position"
+    return f"{sym} {name}".strip()
+
+
 def dist(level, close):
     if level is None or not close:
         return NA
@@ -94,8 +112,8 @@ def facts_text(r):
         else:
             add(f"  Net assets {money(e['net_assets'])}   Expense ratio {pct(e['expense_ratio'],2)}   Turnover {pct(e['turnover'],0)}"
                 f"   Yield {pct(e['dividend_yield'],2)}   Inception {e['inception_date']}")
-            add(f"  Top-10 weight {pct(e['top10_weight'])}   Effective holdings {ratio(e['effective_holdings'],1)}"
-                f"   Holdings listed {e['holdings_count']}")
+            add(f"  Top-10 weight {pct(e['top10_weight'])}   Effective holdings {effective_text(e)}"
+                f"   Holdings listed {e['holdings_count']} covering {pct(e['holdings_weight_total'],0)} of assets")
             add("  Top holdings: " + ", ".join(f"{h['symbol']} {pct(h['weight'])}" for h in e["top10"][:5]))
             add("  Sectors: " + ", ".join(f"{s['sector'].title()} {pct(s['weight'],0)}" for s in e["sectors"][:4]))
             if e.get("geared"):
@@ -318,7 +336,7 @@ def build_pdf(r, daily, weekly, summary, run_dir):
                               e.get("inception_date") or NA]], [W / 5] * 5, st))
             if not geared:
                 P("Exposure", "h2")
-                P(f"Top 10 holdings are {pct(e['top10_weight'])} of assets. Effective number of holdings: {ratio(e['effective_holdings'], 1)} "
+                P(f"Top 10 holdings are {pct(e['top10_weight'])} of assets. Effective number of holdings: {effective_text(e)} "
                   f"(from {e['holdings_count']} listed positions covering {pct(e['holdings_weight_total'], 0)} of assets).")
                 tbl = [["Holding", "Weight", "Sector", "Weight"]]
                 for i in range(10):
@@ -326,7 +344,7 @@ def build_pdf(r, daily, weekly, summary, run_dir):
                     s = e["sectors"][i] if i < len(e["sectors"]) else None
                     if not h and not s:
                         break
-                    tbl.append([f"{h['symbol']} {'' if (h['name'] or 'n/a').lower() == 'n/a' else h['name'].title()}".strip() if h else "", pct(h["weight"]) if h else "",
+                    tbl.append([holding_label(h) if h else "", pct(h["weight"]) if h else "",
                                 s["sector"].title() if s else "", pct(s["weight"]) if s else ""])
                 S.append(_table(tbl, [W * 0.42, W * 0.12, W * 0.34, W * 0.12], st))
 
@@ -413,9 +431,11 @@ def build_pdf(r, daily, weekly, summary, run_dir):
 
     # 6. Liquidity
     P("Liquidity", "h2")
+    am, dv_ = lq.get("amihud_60d"), lq.get("dollar_volume_median_20d") or 0
+    am_text = (f"per $1 billion traded, 60 sessions): {pct(am, 2)}" if dv_ >= 100e6
+               else f"per $1 million traded, 60 sessions): {pct(None if am is None else am / 1000, 2)}")
     P(f"Median dollar volume over 20 sessions: {money(lq.get('dollar_volume_median_20d'))}. Latest volume is {ratio(lq.get('relative_volume'))} "
-      f"times the 50-day average. Amihud illiquidity (average absolute daily move per $1 billion traded, 60 sessions): "
-      f"{pct(lq.get('amihud_60d'), 2)}.")
+      f"times the 50-day average. Amihud illiquidity (average absolute daily move {am_text}.")
 
     # 7. Context
     cx = r.get("context")

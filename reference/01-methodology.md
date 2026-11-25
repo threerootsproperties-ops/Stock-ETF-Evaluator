@@ -136,7 +136,7 @@ An ETF report replaces quality and value with ETF sections. Momentum and trend, 
 |---|---|---|
 | Cost | Net expense ratio and portfolio turnover | Alpha Vantage ETF profile |
 | Size and age | Net assets, with a warning below $50 million, and inception date | Alpha Vantage ETF profile |
-| Exposure | Top 10 holdings with weights, top-10 total, effective number of holdings (1 / sum of squared weights), and sector weights | Alpha Vantage ETF profile |
+| Exposure | Top 10 holdings with weights, top-10 total, effective number of holdings (1 / sum of squared weights), and sector weights. When the holdings list covers less than 95% of assets, the effective number is shown as an upper bound, because the missing positions can only lower it. | Alpha Vantage ETF profile |
 | Tradability | Median dollar volume and relative volume | Daily prices |
 | Structure | Whether the fund is geared | Alpha Vantage ETF profile |
 

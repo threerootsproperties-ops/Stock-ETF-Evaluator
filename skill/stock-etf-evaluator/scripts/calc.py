@@ -534,6 +534,10 @@ def risk(weekly, spy_w, liq, group, inc_q, bal_q, earnings, is_etf=False, etf=No
     dv, px = liq.get("dollar_volume_median_20d"), liq.get("last_price")
     if dv is None:
         out["skipped"].append("Dollar volume: not available")
+    elif dv < 5e6 and is_etf:
+        out["flags"].append(f"Thin trading: median dollar volume is ${dv/1e6:.1f} million. A fund can be easier to trade than its own "
+                            f"volume suggests, because its liquidity comes from the securities it holds, but the spread is not in "
+                            f"the free data. Limit orders are the usual precaution.")
     elif dv < 5e6:
         reasons.append(f"median dollar volume is ${dv/1e6:.1f} million, below $5 million")
     if px is not None and px < 5:
@@ -545,7 +549,7 @@ def risk(weekly, spy_w, liq, group, inc_q, bal_q, earnings, is_etf=False, etf=No
         out["spy_vs_40w"] = {"close": s_close, "avg_40w": s_avg, "above": s_close > s_avg}
         if s_close < s_avg:
             out["flags"].append(f"Market backdrop: SPY ({s_close:.2f}) is below its 40-week average ({s_avg:.2f}). "
-                                f"This applies to every stock alike, so it is a flag and does not change the class.")
+                                f"This applies to every security alike, so it is a flag and does not change the class.")
     else:
         out["skipped"].append("Market backdrop: SPY weekly prices not available")
 
@@ -630,6 +634,7 @@ def etf_profile(raw, name):
         "holdings_count": len(holdings),
         "holdings_weight_total": total if weights else None,
         "effective_holdings": 1 / sum(w * w for w in weights) if weights and sum(w * w for w in weights) > 0 else None,
+        "effective_is_upper_bound": bool(weights) and total < 0.95,
         "sectors": sorted([{"sector": s.get("sector"), "weight": num(s.get("weight"))} for s in raw.get("sectors", [])
                            if num(s.get("weight"))], key=lambda s: -s["weight"]),
     }

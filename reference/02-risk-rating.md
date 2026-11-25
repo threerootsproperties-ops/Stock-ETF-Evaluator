@@ -35,7 +35,7 @@ Each group below can add at most one notch, however many of its conditions are m
 | Group | Adds one notch when any condition is true |
 |---|---|
 | Balance sheet | Negative net income over the trailing 4 quarters; operating income less than 2 times interest expense; total debt more than 4 times EBITDA; negative shareholder equity |
-| Liquidity | Median 20-day dollar volume below $5 million; share price below $5 |
+| Liquidity | Median 20-day dollar volume below $5 million (stocks only); share price below $5 |
 
 A test whose inputs are missing is skipped and listed as "not tested", never counted as passed or failed. Interest expense reported as zero or "None" at a company with debt counts as missing.
 
@@ -52,6 +52,7 @@ Geared, inverse and single-stock funds are set to class 5 regardless of the step
 | Flag | Condition |
 |---|---|
 | Market backdrop | SPY closing below its 40-week average. It applies to every security alike, so it informs the reader without changing the class. |
+| Thin trading (ETFs) | Median 20-day dollar volume below $5 million. A fund's own volume understates how easily it trades, because its liquidity comes from the securities it holds, so for ETFs this is a flag and not a notch. The spread would settle the question and is not in the free data. |
 | Recent earnings | The latest earnings report is more than 75 days old, so the next one is likely near. The exact date is not in the free data. |
 | Stale data | Latest price is more than 3 trading days old, or latest statements are more than 6 months old |
 
