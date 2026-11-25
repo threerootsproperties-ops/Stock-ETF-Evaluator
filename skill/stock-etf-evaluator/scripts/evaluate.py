@@ -20,7 +20,7 @@ import pandas as pd  # noqa: E402
 import calc  # noqa: E402
 import loader  # noqa: E402
 
-VERSION = {"methodology": "0.3", "scripts": "0.3.1"}
+VERSION = {"methodology": "0.3", "scripts": "0.3.2"}
 
 NOT_INCLUDED_STOCK = ("comparison with peer companies, analyst estimate revisions, short interest, "
                       "institutional and insider activity, the next earnings date, and analyst price targets")
