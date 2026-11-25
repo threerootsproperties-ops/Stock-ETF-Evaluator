@@ -1,0 +1,94 @@
+From 2821a3008f8345907b065741c7fc425a32cc2b90 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 24 Nov 2026 21:35:40 -0600
+Subject: [PATCH] Version 0.3.2: escape report text, move daily chart legend
+
+Names with an ampersand (S&P 500, AT&T) were parsed as markup and printed
+with a stray semicolon. Company name, sector, industry, holding and sector
+names, and the summary text are now escaped before they reach the PDF.
+
+The legend on the 100-session chart sat inside the plot and covered the
+level lines. It now sits under the plot.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01JXuydnZyvCxZmfQBtfpbRU
+---
+ skill/stock-etf-evaluator/scripts/evaluate.py |  2 +-
+ skill/stock-etf-evaluator/scripts/report.py   | 16 +++++++++-------
+ 2 files changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/skill/stock-etf-evaluator/scripts/evaluate.py b/skill/stock-etf-evaluator/scripts/evaluate.py
+index 8881d2e..d0a4a6c 100644
+--- a/skill/stock-etf-evaluator/scripts/evaluate.py
++++ b/skill/stock-etf-evaluator/scripts/evaluate.py
+@@ -20,7 +20,7 @@ import pandas as pd  # noqa: E402
+ import calc  # noqa: E402
+ import loader  # noqa: E402
+ 
+-VERSION = {"methodology": "0.3", "scripts": "0.3.1"}
++VERSION = {"methodology": "0.3", "scripts": "0.3.2"}
+ 
+ NOT_INCLUDED_STOCK = ("comparison with peer companies, analyst estimate revisions, short interest, "
+                       "institutional and insider activity, the next earnings date, and analyst price targets")
+diff --git a/skill/stock-etf-evaluator/scripts/report.py b/skill/stock-etf-evaluator/scripts/report.py
+index 2b39460..ec82525 100644
+--- a/skill/stock-etf-evaluator/scripts/report.py
++++ b/skill/stock-etf-evaluator/scripts/report.py
+@@ -4,6 +4,7 @@ Layout follows reference/04-report-template.md. No number is calculated here;
+ this file only formats what calc.py produced.
+ """
+ import os
++from xml.sax.saxutils import escape as esc
+ 
+ import matplotlib
+ matplotlib.use("Agg")
+@@ -220,12 +221,13 @@ def charts(r, daily, weekly, run_dir):
+         if y is not None:
+             ax.axhline(y, color=col, lw=0.9, ls=":", label=f"{lab} {y:,.2f}")
+     ax.set_title(f"{r['symbol']}: last {len(daily)} sessions", fontsize=9, loc="left")
+-    ax.legend(fontsize=6.5, frameon=False, ncol=3, loc="upper left")
+     ax.tick_params(labelsize=7)
+     ax.grid(alpha=0.25)
+     for sp in ("top", "right"):
+         ax.spines[sp].set_visible(False)
+-    fig.tight_layout()
++    # Legend sits under the plot: inside the axes it covered the level lines.
++    fig.legend(*ax.get_legend_handles_labels(), fontsize=6.5, frameon=False, ncol=5, loc="lower center")
++    fig.tight_layout(rect=(0, 0.07, 1, 1))
+     p = os.path.join(run_dir, "chart_daily.png")
+     fig.savefig(p)
+     plt.close(fig)
+@@ -289,8 +291,8 @@ def build_pdf(r, daily, weekly, summary, run_dir):
+     P = lambda t, k="body": S.append(Paragraph(t, st[k]))  # noqa: E731
+ 
+     # 1. Header
+-    P(f"{r['symbol']}: {r.get('name') or ''}", "h1")
+-    kind = "ETF" if is_etf else f"{r.get('sector') or NA} / {r.get('industry') or NA}"
++    P(f"{r['symbol']}: {esc(r.get('name') or '')}", "h1")
++    kind = "ETF" if is_etf else f"{esc(r.get('sector') or NA)} / {esc(r.get('industry') or NA)}"
+     size = f"Net assets {money((r.get('etf') or {}).get('net_assets'))}" if is_etf else f"Market cap {money(r.get('market_cap'))}"
+     P(f"{kind} &nbsp;|&nbsp; Last close {price(m['last_close'])} on {m['last_date']} &nbsp;|&nbsp; {size}")
+     P(f"Report date {r['report_date']} &nbsp;|&nbsp; Methodology {r['version']['methodology']}, scripts {r['version']['scripts']} "
+@@ -302,7 +304,7 @@ def build_pdf(r, daily, weekly, summary, run_dir):
+     if geared:
+         text = GEARED_LINE + " " + text
+     for para in text.split("\n\n"):
+-        P(para.replace("\n", " "))
++        P(esc(para.replace("\n", " ")))
+ 
+     # 3. Pillars or ETF sections
+     if not is_etf:
+@@ -344,8 +346,8 @@ def build_pdf(r, daily, weekly, summary, run_dir):
+                     s = e["sectors"][i] if i < len(e["sectors"]) else None
+                     if not h and not s:
+                         break
+-                    tbl.append([holding_label(h) if h else "", pct(h["weight"]) if h else "",
+-                                s["sector"].title() if s else "", pct(s["weight"]) if s else ""])
++                    tbl.append([esc(holding_label(h)) if h else "", pct(h["weight"]) if h else "",
++                                esc(s["sector"].title()) if s else "", pct(s["weight"]) if s else ""])
+                 S.append(_table(tbl, [W * 0.42, W * 0.12, W * 0.34, W * 0.12], st))
+ 
+     # Momentum and trend
+-- 
+2.43.0
+
