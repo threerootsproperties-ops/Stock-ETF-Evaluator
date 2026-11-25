@@ -1,8 +1,8 @@
 # Risk rating specification
 
-Version 0.2, written 2026-11-24. The risk rating is a class from 1 (lowest) to 5 (highest) that describes how rough the ride has been and what could make it rougher. It says nothing about expected return. A high rating marks variance, not opportunity.
+Version 0.3, written 2026-11-24. The risk rating is a class from 1 (lowest) to 5 (highest) that describes how rough the ride has been and what could make it rougher. It says nothing about expected return. A high rating marks variance, not opportunity.
 
-Version 0.2 calculates volatility from weekly prices, because the free data supplies only 100 days of daily history, and drops the crowding group, because short interest is not available free.
+This version calculates volatility from weekly prices, because the free data supplies only 100 days of daily history, and drops the crowding group, because short interest is not available free. Version 0.3 changed the market backdrop from a notch to a flag: in testing it raised every stock and fund by one class at the same time, which pushed unlike securities to the same top rating.
 
 ## Design
 
@@ -36,7 +36,6 @@ Each group below can add at most one notch, however many of its conditions are m
 |---|---|
 | Balance sheet | Negative net income over the trailing 4 quarters; operating income less than 2 times interest expense; total debt more than 4 times EBITDA; negative shareholder equity |
 | Liquidity | Median 20-day dollar volume below $5 million; share price below $5 |
-| Market backdrop | SPY closing below its 40-week average |
 
 A test whose inputs are missing is skipped and listed as "not tested", never counted as passed or failed. Interest expense reported as zero or "None" at a company with debt counts as missing.
 
@@ -52,6 +51,7 @@ Geared, inverse and single-stock funds are set to class 5 regardless of the step
 
 | Flag | Condition |
 |---|---|
+| Market backdrop | SPY closing below its 40-week average. It applies to every security alike, so it informs the reader without changing the class. |
 | Recent earnings | The latest earnings report is more than 75 days old, so the next one is likely near. The exact date is not in the free data. |
 | Stale data | Latest price is more than 3 trading days old, or latest statements are more than 6 months old |
 

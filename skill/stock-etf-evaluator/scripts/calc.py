@@ -299,15 +299,15 @@ def momentum(daily, weekly, spy_w, sec_w):
     out["mom_12_1"] = {"stock": m12_1(w), "spy": m12_1(spy_w["adj_close"]) if spy_w is not None else None,
                        "sector": m12_1(sec_w["adj_close"]) if sec_w is not None else None}
     close = float(daily["close"].iloc[-1])
-    hi52 = max(float(weekly["high"].iloc[-52:].max()), float(daily["high"].max())) if len(weekly) >= 52 else None
+    hi52 = max(float(weekly["s_high"].iloc[-52:].max()), float(daily["high"].max())) if len(weekly) >= 52 else None
     out["last_close"] = close
     out["last_date"] = str(daily.index[-1].date())
     out["high_52w"] = hi52
     out["pct_of_52w_high"] = _div(close, hi52)
     sma50 = _f(daily["close"].iloc[-50:].mean()) if len(daily) >= 50 else None
     sd50 = _f(daily["close"].iloc[-50:].std(ddof=1)) if len(daily) >= 50 else None
-    wk40 = _f(weekly["close"].iloc[-40:].mean()) if len(weekly) >= 40 else None
-    wk10 = _f(weekly["close"].iloc[-10:].mean()) if len(weekly) >= 10 else None
+    wk40 = _f(weekly["s_close"].iloc[-40:].mean()) if len(weekly) >= 40 else None
+    wk10 = _f(weekly["s_close"].iloc[-10:].mean()) if len(weekly) >= 10 else None
     out.update({"sma50": sma50, "avg_40w": wk40, "avg_10w": wk10,
                 "above_sma50": None if sma50 is None else close > sma50,
                 "above_40w": None if wk40 is None else close > wk40,
@@ -541,10 +541,11 @@ def risk(weekly, spy_w, liq, group, inc_q, bal_q, earnings, is_etf=False, etf=No
     notch("Liquidity", reasons)
 
     if spy_w is not None and len(spy_w) >= 40:
-        s_close, s_avg = float(spy_w["close"].iloc[-1]), float(spy_w["close"].iloc[-40:].mean())
+        s_close, s_avg = float(spy_w["s_close"].iloc[-1]), float(spy_w["s_close"].iloc[-40:].mean())
         out["spy_vs_40w"] = {"close": s_close, "avg_40w": s_avg, "above": s_close > s_avg}
         if s_close < s_avg:
-            notch("Market backdrop", [f"SPY ({s_close:.2f}) is below its 40-week average ({s_avg:.2f})"])
+            out["flags"].append(f"Market backdrop: SPY ({s_close:.2f}) is below its 40-week average ({s_avg:.2f}). "
+                                f"This applies to every stock alike, so it is a flag and does not change the class.")
     else:
         out["skipped"].append("Market backdrop: SPY weekly prices not available")
 

@@ -1,15 +1,15 @@
 # Methodology
 
-Version 0.2, written 2026-11-24. This file defines what the evaluator measures, how each measure is calculated, and how results are shown. The Project reads it as reference. The scripts in the skill are the final word on any formula; where this file and a script disagree, fix this file.
+Version 0.3, written 2026-11-24. This file defines what the evaluator measures, how each measure is calculated, and how results are shown. The Project reads it as reference. The scripts in the skill are the final word on any formula; where this file and a script disagree, fix this file.
 
-Version 0.2 is built around free data. It runs on the free tiers of two data connectors, which sets the limits described below. Version 0.1 assumed a paid data plan and peer rankings; those parts are listed under "Left out of this version".
+This version is built around free data. It runs on the free tiers of two data connectors, which sets the limits described below. Version 0.1 assumed a paid data plan and peer rankings; those parts are listed under "Left out of this version".
 
 This is non-personalized research for the person running it. It is not investment advice, and nothing here knows your holdings, goals or account size.
 
 ## How a run works
 
 1. You type a ticker.
-2. The Project reads the company profile through the FMP connector. A script then downloads statements and prices straight from Alpha Vantage, one request at a time, using your own free key. Where the code sandbox is not allowed to reach Alpha Vantage, the Project pulls the same data through the Alpha Vantage connector instead.
+2. The Project reads the company profile through the FMP connector and pulls statements and prices through the Alpha Vantage connector, one request at a time. As an option, if you put your own Alpha Vantage key in the project instructions, a script downloads the same data directly, which is faster.
 3. The raw data sits in files, and the scripts calculate every ratio, level and rating from those files. The source and as-of date of every figure is recorded.
 4. The Project writes the PDF from the script output, following `04-report-template.md`.
 
@@ -24,7 +24,7 @@ No number in the report is calculated in conversation. If the scripts did not pr
 
 A stock report uses 1 FMP request and 8 Alpha Vantage requests: three statements, earnings, daily prices, and weekly prices for the stock, SPY and the sector fund. An ETF report uses 1 FMP request and 4 Alpha Vantage requests. That allows about three stock reports or six ETF reports a day on free keys.
 
-Tested on 2026-11-24 with free keys: the FMP profile, and Alpha Vantage's income statement, balance sheet, cash flow, earnings, daily prices, weekly prices and ETF profile. The scripts were run end to end on two stocks. The ETF track was run on test data only, not on a live ETF from start to finish.
+Tested on 2026-11-24 with free keys: the FMP profile, and Alpha Vantage's income statement, balance sheet, cash flow, earnings, daily prices, weekly prices and ETF profile. The scripts were run end to end on two stocks and one ETF, with the data arriving through the connectors.
 
 Two consequences of the free tiers shape everything below. Daily prices cover only the last 100 trading days, so anything that needs a longer window uses weekly prices. And there is no budget to pull data for a group of peers, so figures are compared with the company's own history and with fixed reference points, not with a peer ranking.
 
@@ -80,6 +80,8 @@ Value is never shown alone. If earnings yield and free cash flow yield are both 
 | Trend position | Price against the 50-day average and the 40-week average, and whether the 10-week average is above the 40-week | Daily and weekly |
 
 The 40-week average stands in for the 200-day average, which cannot be calculated from 100 days of daily data. They cover the same span.
+
+Price history is restated for stock splits before any of this is calculated. Alpha Vantage's weekly prices are not split-adjusted in their high, low and close columns, so the scripts detect a split from a jump of more than 20% in the ratio of close to adjusted close, and restate earlier prices by that ratio. The report notes any split found in the last five years.
 
 The pillar also carries a state label. A stock is "Extended" when its last close sits 2.5 or more standard deviations above its 50-day average, using the standard deviation of the last 50 daily closes. Extended suppresses the buy range (see Levels). In the author's own testing on an earlier project this do-not-chase state was the one entry-side rule that held up, and it weakened sharply in bear markets.
 

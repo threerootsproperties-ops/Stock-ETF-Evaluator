@@ -215,8 +215,8 @@ def charts(r, daily, weekly, run_dir):
 
     w = weekly.iloc[-156:]
     fig, ax = plt.subplots(figsize=(7.2, 2.5), dpi=150)
-    ax.plot(w.index, w["close"], color="#1f2933", lw=1.2, label="Weekly close")
-    ax.plot(w.index, weekly["close"].rolling(40).mean().iloc[-156:], color="#7b8794", lw=1, ls="--", label="40-week average")
+    ax.plot(w.index, w["s_close"], color="#1f2933", lw=1.2, label="Weekly close")
+    ax.plot(w.index, weekly["s_close"].rolling(40).mean().iloc[-156:], color="#7b8794", lw=1, ls="--", label="40-week average")
     ax.set_title(f"{r['symbol']}: 3 years, weekly", fontsize=9, loc="left")
     ax.legend(fontsize=6.5, frameon=False, loc="upper left")
     ax.tick_params(labelsize=7)

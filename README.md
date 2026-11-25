@@ -6,7 +6,7 @@ It runs on free data. You need a Claude subscription and two free data accounts,
 
 This repository holds everything needed to rebuild the Project in your own Claude subscription.
 
-**Status: first working version.** The reference files, the scripts and the skill are written. The scripts have been run end to end on two stocks. The ETF track has been run on test data only, and the whole thing has not yet been run inside a Claude Project, so expect rough edges.
+**Status: first working version.** The reference files, the scripts and the skill are written. The scripts have been run end to end on two stocks and one ETF, with data pulled through the connectors. The whole thing has not yet been run inside a Claude Project, so expect rough edges.
 
 Read [DISCLAIMER.md](DISCLAIMER.md) before using anything here. This is a research tool, not investment advice.
 
@@ -51,16 +51,16 @@ Claude writes the short prose in each report. Every number comes from a script, 
 ## Setup
 
 1. Create a free account at financialmodelingprep.com and a free API key at alphavantage.co. Store both keys in a password manager.
-2. In Claude, connect the FMP connector from the connector directory. It asks for your key in its own sign-in screen. Connecting the Alpha Vantage connector as well is optional; it is the fallback route.
+2. In Claude, connect the FMP connector and the Alpha Vantage connector from the connector directory. Each asks for your key in its own sign-in screen.
 3. Create a new project and name it `Stock and ETF Evaluator`.
-4. Paste the text under "Project description" below into the project's instructions, and put your own Alpha Vantage key where it says `YOUR_KEY_HERE`.
+4. Paste the text under "Project description" below into the project's instructions.
 5. Add the five files from `reference/` as project context.
 6. Install the skill. Zip the `skill/stock-etf-evaluator` folder and upload it in Claude's skill settings.
 7. Open the project and type a ticker.
 
-Your Alpha Vantage key lives in your own project's instructions, which only you can see. Never put a key in this repository or in anything you share. If a key is ever exposed, request a new free one and replace it.
+Your keys live only inside the two connectors. Never put a key in this repository or in anything you share. If a key is ever exposed, request a new free one and replace it.
 
-The script downloads data straight from Alpha Vantage, which needs Claude's code sandbox to be allowed to reach `www.alphavantage.co`. That worked on the author's account. If it is blocked on yours, the skill falls back to the Alpha Vantage connector, which is slower.
+There is an optional faster route. If you add a line `ALPHAVANTAGE_API_KEY=your key` to your own project's instructions, the skill downloads the data with a script instead of through the connector. That needs Claude's code sandbox to be allowed to reach `www.alphavantage.co`, and it puts your key in your project's instructions, which only you can see.
 
 ### Project description
 
@@ -68,14 +68,10 @@ The script downloads data straight from Alpha Vantage, which needs Claude's code
 When I type a ticker symbol, produce a PDF evaluation of that US-listed stock or ETF.
 
 For every ticker: use the stock-etf-evaluator skill. It reads the company profile
-through the FMP connector, downloads the rest from Alpha Vantage, runs the
-evaluation scripts, and builds the PDF from the script output. Never calculate a
-ratio, level, or rating in conversation; every number in the report comes from
-a script.
-
-ALPHAVANTAGE_API_KEY=YOUR_KEY_HERE
-Pass this key to the download script as an environment variable only. Never
-print it, write it to a file, or include it in a report.
+through the FMP connector, pulls the rest through the Alpha Vantage connector,
+runs the evaluation scripts, and builds the PDF from the script output. Never
+calculate a ratio, level, or rating in conversation; every number in the report
+comes from a script.
 
 The free Alpha Vantage tier allows 25 requests a day and one per second. A
 stock report uses 8 and an ETF report uses 4. Send no others.

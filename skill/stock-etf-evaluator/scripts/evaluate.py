@@ -15,10 +15,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import pandas as pd  # noqa: E402
+
 import calc  # noqa: E402
 import loader  # noqa: E402
 
-VERSION = {"methodology": "0.2", "scripts": "0.2.0"}
+VERSION = {"methodology": "0.3", "scripts": "0.3.0"}
 
 NOT_INCLUDED_STOCK = ("comparison with peer companies, analyst estimate revisions, short interest, "
                       "institutional and insider activity, the next earnings date, and analyst price targets")
@@ -48,6 +50,10 @@ def compute(run_dir):
         warnings.append("sector_weekly file not found: comparisons with the sector fund are not available.")
     if daily is None or weekly is None or [p for p in problems if "need at least" in p]:
         sys.exit("Cannot continue:\n  " + "\n  ".join(problems))
+    warnings += loader.apply_splits_to_daily(daily, weekly)
+    for sp in weekly.attrs.get("splits") or []:
+        if pd.Timestamp(sp["week_ending"]) > weekly.index[-1] - pd.Timedelta(days=5 * 366):
+            warnings.append(f"Stock split of {sp['ratio']:g}-for-1 in the week ending {sp['week_ending']}; price history is restated for it.")
     if abs(daily["close"].iloc[-1] / weekly["close"].iloc[-1] - 1) > 0.02 and daily.index[-1] == weekly.index[-1]:
         problems.append("daily and weekly files disagree on the latest close by more than 2%")
     px = loader.num(profile.get("price"))
@@ -147,6 +153,7 @@ def build_report(run_dir):
         summary = open(sp, encoding="utf-8").read().strip()
     daily = loader.read_prices(run_dir, "daily")
     weekly = loader.read_prices(run_dir, "weekly")
+    loader.apply_splits_to_daily(daily, weekly)
     out = report.build_pdf(res, daily, weekly, summary, run_dir)
     print("PDF written:", out)
 

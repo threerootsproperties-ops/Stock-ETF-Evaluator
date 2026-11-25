@@ -106,7 +106,66 @@ def read_prices(run_dir, base):
     if "volume" not in df.columns:
         df["volume"] = float("nan")
     df = df.dropna(subset=["close"]).drop_duplicates("timestamp").sort_values("timestamp").set_index("timestamp")
-    return df[["open", "high", "low", "close", "adj_close", "volume"]]
+    df = df[["open", "high", "low", "close", "adj_close", "volume"]].copy()
+    add_split_adjusted(df)
+    return df
+
+
+def add_split_adjusted(df):
+    """Add s_close, s_high and s_low: prices restated for stock splits only.
+
+    A split shows up as a jump in close / adjusted close from one bar to the
+    next (2 for a 2-for-1 split). Dividends move that ratio by a percent or
+    two, so only jumps beyond 20% are treated as splits. The list of splits
+    found is stored in df.attrs["splits"].
+    """
+    g = (df["close"] / df["adj_close"]).values
+    factor = [1.0] * len(df)
+    splits, run = [], 1.0
+    for i in range(len(df) - 2, -1, -1):
+        step = g[i] / g[i + 1] if g[i + 1] else 1.0
+        if step > 1.2 or step < 0.8:
+            run *= step
+            splits.append({"week_ending": str(df.index[i + 1].date()), "ratio": round(step, 4)})
+        factor[i] = run
+    df["s_close"] = df["close"] / factor
+    df["s_high"] = df["high"] / factor
+    df["s_low"] = df["low"] / factor
+    # The bar in which a split happened mixes old and new prices: restate the side that is still on the old basis.
+    for sp in splits:
+        d, k = __import__("pandas").Timestamp(sp["week_ending"]), sp["ratio"]
+        if k > 1 and df.at[d, "s_high"] / df.at[d, "s_close"] > 1.3:
+            df.at[d, "s_high"] = df.at[d, "s_high"] / k
+        if k < 1 and df.at[d, "s_low"] / df.at[d, "s_close"] < 0.77:
+            df.at[d, "s_low"] = df.at[d, "s_low"] / k
+    df.attrs["splits"] = splits
+
+
+def apply_splits_to_daily(daily, weekly):
+    """Restate daily bars for any split that falls inside the daily window.
+
+    Returns a list of notes describing what was done or could not be done.
+    """
+    import math
+    notes = []
+    for sp in (weekly.attrs.get("splits") or []):
+        end = __import__("pandas").Timestamp(sp["week_ending"])
+        if end <= daily.index[0]:
+            continue
+        win = daily[(daily.index > end - __import__("pandas").Timedelta(days=7)) & (daily.index <= end)]
+        prev = daily["close"].shift()
+        jump = (win["close"] / prev[win.index]).dropna()
+        target = 1 / sp["ratio"]
+        hit = [d for d, v in jump.items() if abs(math.log(v) - math.log(target)) < 0.15]
+        if not hit:
+            notes.append(f"A stock split near {sp['week_ending']} could not be located in the daily prices; levels may be distorted.")
+            continue
+        before = daily.index < hit[0]
+        for c in ("open", "high", "low", "close", "adj_close", "s_close", "s_high", "s_low"):
+            daily.loc[before, c] = daily.loc[before, c] / sp["ratio"]
+        daily.loc[before, "volume"] = daily.loc[before, "volume"] * sp["ratio"]
+        notes.append(f"Daily prices before {hit[0].date()} were restated for a {sp['ratio']:g}-for-1 stock split.")
+    return notes
 
 
 def read_statement(run_dir, base):

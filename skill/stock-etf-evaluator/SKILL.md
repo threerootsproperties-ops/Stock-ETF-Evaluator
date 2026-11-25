@@ -42,20 +42,7 @@ python $SCRIPTS/evaluate.py sector-fund "SECTOR NAME FROM THE PROFILE"
 
 ## Step 3: download the data
 
-Use the direct route first. It needs the user's Alpha Vantage key, which they keep in the project instructions as `ALPHAVANTAGE_API_KEY`. Pass it on the command line as an environment variable and nowhere else.
-
-```
-ALPHAVANTAGE_API_KEY=... python $SCRIPTS/fetch.py stock TICKER $RUN --sector-fund XLI
-ALPHAVANTAGE_API_KEY=... python $SCRIPTS/fetch.py etf   TICKER $RUN
-```
-
-Read what it prints. "Saved" lists the files it wrote. If a file is listed under "Not saved" with a daily-limit message, tell the user the free quota is used up for today and stop. Do not retry.
-
-If the script prints "STOPPED: could not reach www.alphavantage.co", or no key is in the project instructions, use the connector route below.
-
-### Connector route (fallback)
-
-Call the Alpha Vantage connector tools one at a time, never in parallel. Pass `return_full_data: true` on each call.
+Use the Alpha Vantage connector. Call its tools one at a time, never in parallel, and pass `return_full_data: true` on each call.
 
 | File to create in $RUN | Tool | Arguments |
 |---|---|---|
@@ -78,7 +65,18 @@ When a result arrived in the conversation instead, write the file yourself, copy
 - `earnings.json`: the most recent 4 entries of `quarterlyEarnings`.
 - `etf_profile.json`: every top-level field, all sectors, and all holdings if there are 60 or fewer, otherwise the largest 60.
 
-If a tool returns "premium endpoint" or a rate-limit message, do not retry it. Leave that file out; the report will mark the item as not available.
+If a tool returns "premium endpoint", do not retry it. Leave that file out; the report will mark the item as not available. If a tool returns a message about 25 requests per day, the free quota is used up: tell the user and stop. If it asks you to spread requests out, wait a few seconds and send that one request again, once.
+
+### Optional direct download
+
+Only when the project instructions contain a line `ALPHAVANTAGE_API_KEY=...`, you may skip the connector calls and download the same files with the script. Pass the key as an environment variable on the command line and nowhere else.
+
+```
+ALPHAVANTAGE_API_KEY=... python $SCRIPTS/fetch.py stock TICKER $RUN --sector-fund XLI
+ALPHAVANTAGE_API_KEY=... python $SCRIPTS/fetch.py etf   TICKER $RUN
+```
+
+"Saved" lists the files it wrote. If it prints "STOPPED", go back to the connector.
 
 ## Step 4: calculate
 
