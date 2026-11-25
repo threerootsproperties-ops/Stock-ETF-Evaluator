@@ -78,4 +78,4 @@ The factors shown come from published research on large groups of stocks, and pu
 
 ## License
 
-To be added.
+Released under the [MIT License](LICENSE). You are free to copy, change and share anything here, as long as the copyright notice stays with it.
