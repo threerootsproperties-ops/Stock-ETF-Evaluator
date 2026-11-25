@@ -6,7 +6,7 @@ It runs on free data. You need a Claude subscription and two free data accounts,
 
 This repository holds everything needed to rebuild the Project in your own Claude subscription.
 
-**Status: in progress.** The reference files are written and the data sources are chosen and tested. The calculation scripts are not built yet, so the Project cannot produce a report today. This page will be updated as each piece lands.
+**Status: first working version.** The reference files, the scripts and the skill are written. The scripts have been run end to end on two stocks. The ETF track has been run on test data only, and the whole thing has not yet been run inside a Claude Project, so expect rough edges.
 
 Read [DISCLAIMER.md](DISCLAIMER.md) before using anything here. This is a research tool, not investment advice.
 
@@ -33,8 +33,8 @@ Every figure carries its source and date. Missing data prints "not available". T
 |---|---|---|
 | Project description | Tells Claude the job and the rules | Written, below |
 | Reference files | Define the method, the risk rating, sector rules, the report layout and the evidence | Written, in `reference/` |
-| Data connectors | Financial Modeling Prep for company profiles, Alpha Vantage for statements, prices and ETF holdings | Chosen and tested |
-| Skill with scripts | Calculates every number and builds the PDF | Not built |
+| Data sources | Financial Modeling Prep for company profiles, Alpha Vantage for statements, prices and ETF holdings | Chosen and tested |
+| Skill with scripts | Downloads the data, calculates every number and builds the PDF | Written, in `skill/` |
 
 Claude writes the short prose in each report. Every number comes from a script, so two reports on the same ticker and date match.
 
@@ -50,31 +50,35 @@ Claude writes the short prose in each report. Every number comes from a script, 
 
 ## Setup
 
-Step 6 will be filled in when the scripts are ready.
-
 1. Create a free account at financialmodelingprep.com and a free API key at alphavantage.co. Store both keys in a password manager.
-2. In Claude, connect the FMP connector and the Alpha Vantage connector from the connector directory. Each asks for your key in its own sign-in screen.
+2. In Claude, connect the FMP connector from the connector directory. It asks for your key in its own sign-in screen. Connecting the Alpha Vantage connector as well is optional; it is the fallback route.
 3. Create a new project and name it `Stock and ETF Evaluator`.
-4. Paste the text under "Project description" below into the description or instructions field.
+4. Paste the text under "Project description" below into the project's instructions, and put your own Alpha Vantage key where it says `YOUR_KEY_HERE`.
 5. Add the five files from `reference/` as project context.
-6. Install the evaluator skill. (Not available yet.)
+6. Install the skill. Zip the `skill/stock-etf-evaluator` folder and upload it in Claude's skill settings.
 7. Open the project and type a ticker.
 
-Never put an API key in this repository, in a project file, or in a chat. The keys live only in the connector settings.
+Your Alpha Vantage key lives in your own project's instructions, which only you can see. Never put a key in this repository or in anything you share. If a key is ever exposed, request a new free one and replace it.
+
+The script downloads data straight from Alpha Vantage, which needs Claude's code sandbox to be allowed to reach `www.alphavantage.co`. That worked on the author's account. If it is blocked on yours, the skill falls back to the Alpha Vantage connector, which is slower.
 
 ### Project description
 
 ```
 When I type a ticker symbol, produce a PDF evaluation of that US-listed stock or ETF.
 
-For every ticker: pull current data through the FMP and Alpha Vantage connectors,
-run the evaluation scripts, and build the PDF from the script output. Never
-calculate a ratio, level, or rating in conversation; every number in the report
-comes from a script.
+For every ticker: use the stock-etf-evaluator skill. It reads the company profile
+through the FMP connector, downloads the rest from Alpha Vantage, runs the
+evaluation scripts, and builds the PDF from the script output. Never calculate a
+ratio, level, or rating in conversation; every number in the report comes from
+a script.
 
-Send Alpha Vantage requests one at a time, never in parallel; its free tier
-rejects requests sent faster than one per second. Use only the requests listed
-in 01-methodology, because the free tier allows 25 a day.
+ALPHAVANTAGE_API_KEY=YOUR_KEY_HERE
+Pass this key to the download script as an environment variable only. Never
+print it, write it to a file, or include it in a report.
+
+The free Alpha Vantage tier allows 25 requests a day and one per second. A
+stock report uses 8 and an ETF report uses 4. Send no others.
 
 Follow the reference files: 01-methodology for what is measured and where the
 data comes from, 02-risk-rating for the risk class, 03-sector-metric-map for

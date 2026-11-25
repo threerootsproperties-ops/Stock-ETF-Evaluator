@@ -9,8 +9,8 @@ This is non-personalized research for the person running it. It is not investmen
 ## How a run works
 
 1. You type a ticker.
-2. The Project pulls raw data through the two connectors, one request at a time, and records the source and as-of date of every figure.
-3. The raw data is saved to a file, and the scripts calculate every ratio, level and rating from that file.
+2. The Project reads the company profile through the FMP connector. A script then downloads statements and prices straight from Alpha Vantage, one request at a time, using your own free key. Where the code sandbox is not allowed to reach Alpha Vantage, the Project pulls the same data through the Alpha Vantage connector instead.
+3. The raw data sits in files, and the scripts calculate every ratio, level and rating from those files. The source and as-of date of every figure is recorded.
 4. The Project writes the PDF from the script output, following `04-report-template.md`.
 
 No number in the report is calculated in conversation. If the scripts did not produce it, it does not appear.
@@ -24,7 +24,7 @@ No number in the report is calculated in conversation. If the scripts did not pr
 
 A stock report uses 1 FMP request and 8 Alpha Vantage requests: three statements, earnings, daily prices, and weekly prices for the stock, SPY and the sector fund. An ETF report uses 1 FMP request and 4 Alpha Vantage requests. That allows about three stock reports or six ETF reports a day on free keys.
 
-Tested on 2026-11-24: the FMP profile, and Alpha Vantage's income statement, daily prices, weekly prices and ETF profile. The balance sheet, cash flow and earnings requests come from the same group as the income statement and are expected to work, but had not been tested when this file was written.
+Tested on 2026-11-24 with free keys: the FMP profile, and Alpha Vantage's income statement, balance sheet, cash flow, earnings, daily prices, weekly prices and ETF profile. The scripts were run end to end on two stocks. The ETF track was run on test data only, not on a live ETF from start to finish.
 
 Two consequences of the free tiers shape everything below. Daily prices cover only the last 100 trading days, so anything that needs a longer window uses weekly prices. And there is no budget to pull data for a group of peers, so figures are compared with the company's own history and with fixed reference points, not with a peer ranking.
 
@@ -66,7 +66,7 @@ Value is shown as yields, not multiples, because a yield still reads correctly w
 
 Enterprise value is market capitalization plus total debt minus cash and short-term investments.
 
-Each yield is shown beside the company's own median for the last 5 fiscal years, using the year-end price from the weekly series, so a reader can see whether the stock is cheaper or dearer than its own recent norm. This says nothing about whether it is cheap against other companies.
+Each yield is shown beside the company's own median for the last 5 fiscal years, using the year-end price from the weekly series and the share count reported at that date. A yield more than 10% above its median reads "cheaper", more than 10% below reads "dearer", and anything between reads "in line". When the current yield or the median is zero or negative, the row reads "not comparable", because a move from losses to profits is not a statement about price. None of this says whether the stock is cheap against other companies.
 
 Value is never shown alone. If earnings yield and free cash flow yield are both above their 5-year medians while return on equity is negative and price is below its 40-week average, the report prints a value-trap flag.
 
@@ -100,16 +100,19 @@ All levels come from price structure. The evaluator does not estimate fair value
 | Level | Rule |
 |---|---|
 | Buy range | From the 50-day pivot high up to the pivot plus 2 x ATR(14). Shown only when the stock is not Extended and price is above the 40-week average. |
-| Initial stop | Entry minus 2 x ATR(14), or 8% below entry, whichever is closer to entry |
+| Initial stop | For an entry at the pivot: entry minus 2 x ATR(14), or 8% below entry, whichever is closer to entry. Shown only with a buy range. |
 | Trailing exit | The higher of the 50-day average and the most recent higher swing low, minus 1 x ATR(14) |
-| Tightened trail | The same reference minus 0.5 x ATR(14) once any topping flag has been active for 5 sessions |
+| Tightened trail | The same reference minus 0.5 x ATR(14) while topping flags persist |
+| Measured-move reference | The pivot plus the depth of the pullback since the pivot (pivot minus the lowest low after it). Shown only with a buy range. |
 | Reward to risk | (Measured-move reference - entry) / (entry - stop), with the break-even win rate 1 / (1 + R) |
 
 The pivot high is the highest daily high of the last 50 sessions. ATR(14) is Wilder's average true range over 14 sessions. All of these fit inside 100 days of daily data.
 
 Topping flags are: a close below the 50-day average on above-average volume, 5 or more distribution days in 25 sessions, a failed breakout (a close back below the pivot by 7% or more), and a lower high followed by a lower low. The exact definitions are fixed by the scripts.
 
-For a stock below its 40-week average, the report replaces the buy range with the nearest structure references: the last swing low held, the 50-day average and the 40-week average.
+For a stock below its 40-week average, the report replaces the buy range with the nearest structure references: the 50-day pivot high, the last confirmed swing low, the 40-week average, and the lowest low of the last 10 sessions when that is below the last swing low. A swing low is a daily low that is the lowest of the 3 sessions on each side of it, so the most recent 3 sessions can never be confirmed swings.
+
+The trailing exit and the tightened trail are references for someone already holding the position. The tightened trail is shown as active when at least one topping flag is present now and at least one was present 5 sessions ago.
 
 ## Context block
 
